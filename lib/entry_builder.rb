@@ -8,21 +8,20 @@ class EntryBuilder
   end
 
   def build_lines
-    lines = [Line.new(*line_indent_and_text(@raw_lines[0]))]
-    @raw_lines[1..-1].each do |raw_line|
-      new_line = Line.new(*line_indent_and_text(raw_line))
-      last_indent = lines.last.indent
-      if new_line.indent == 0 && new_line.text != ""
-        new_line.indent = last_indent
+    [new_line(@raw_lines[0])].tap do |lines|
+      @raw_lines[1..-1].each do |raw_line|
+        lines << new_line(raw_line, lines.last.indent)
       end
-      lines << new_line
     end
-    lines
   end
 
-  def line_indent_and_text(raw_line)
+  def new_line(raw_line, last_indent = 0)
     c = raw_line.split("> ")
-    return [0, ""] if c.size == 0
-    [c.length - 1, c.last]
+    return Line.new("") if c.size == 0
+    Line.new(new_indent(c.length - 1, last_indent), c.last)
+  end
+
+  def new_indent(new_indent, last_indent)
+    new_indent == 0 ? last_indent : new_indent
   end
 end

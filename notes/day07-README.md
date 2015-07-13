@@ -1,0 +1,115 @@
+# 004-07
+
+Now that I’m carrying code over for a third day, time to consult the [long-running projects](https://github.com/RubySteps/21-day-challenge/wiki/Long-Running-Projects) advice and move it to a separate [project](https://github.com/smiller/entries).
+
+Two things left over from 004/06:
+
+- Refactor the `build_lines` method
+- Add another test in EntryBuilderSpec for the Macbeth quotation
+
+And a possible third:
+
+- Look for a more elegant way of handling the `lines_match` check.  Note also that the error messaging is cryptic.  Maybe add a custom matcher? (see earlier [here](http://thewanderingcoder.com/2015/06/testing-with-page-objects-setup/#sec-4-1))
+
+## Refactor `build_lines`
+
+Starting from:
+
+```ruby
+def build_lines
+  lines = [Line.new(*line_indent_and_text(@raw_lines[0]))]
+  @raw_lines[1..-1].each do |raw_line|
+    new_line = Line.new(*line_indent_and_text(raw_line))
+    last_indent = lines.last.indent
+    if new_line.indent == 0 && new_line.text != ""
+      new_line.indent = last_indent
+    end
+    lines << new_line
+  end
+  lines
+end
+```
+
+We can get rid of the last line returning `lines` return with `tap`:
+
+```ruby
+def build_lines
+  [Line.new(*line_indent_and_text(@raw_lines[0]))].tap do |lines|
+    @raw_lines[1..-1].each do |raw_line|
+      new_line = Line.new(*line_indent_and_text(raw_line))
+      last_indent = lines.last.indent
+      if new_line.indent == 0 && new_line.text != ""
+        new_line.indent = last_indent
+      end
+      lines << new_line
+    end
+  end
+end
+```
+
+Since `line_indent_and_text` is only called as an argument to `Line.new`, we can rename it and get it to return the new line:
+
+```ruby
+def build_lines
+  [line_from_raw(@raw_lines[0])].tap do |lines|
+    @raw_lines[1..-1].each do |raw_line|
+      new_line = line_from_raw(raw_line)
+      last_indent = lines.last.indent
+      if new_line.indent == 0 && new_line.text != ""
+        new_line.indent = last_indent
+      end
+      lines << new_line
+    end
+  end
+end
+
+def line_from_raw(raw_line)
+  c = raw_line.split("> ")
+  return Line.new("") if c.size == 0
+  Line.new(c.length - 1, c.last)
+end
+```
+
+And since changing the indent is part of creating the new line we can push all of that down to the `line_from_raw` method as well, at which point we no longer have a name collision and can call it `new_line`:
+
+```ruby
+def build_lines
+  [new_line(@raw_lines[0])].tap do |lines|
+    @raw_lines[1..-1].each do |raw_line|
+      lines << new_line(raw_line, lines.last.indent)
+    end
+  end
+end
+
+def new_line(raw_line, last_indent = 0)
+  c = raw_line.split("> ")
+  return Line.new("") if c.size == 0
+  Line.new(c.length - 1, c.last).tap do |line|
+    line.indent = last_indent if line.indent == 0
+  end
+end
+```
+
+We’ve taken a ten-line method and replaced it with two five-line methods, but it feels easier to take in at a glance and reason about.  (Also, there is no way I would have wanted to do that without having tests to run between each step.)
+
+We can even take it one further, since the `new_line` method feels like it’s doing two separate things, unbalancedly, and split out the new indent calculation:
+
+```ruby
+def build_lines
+  [new_line(@raw_lines[0])].tap do |lines|
+    @raw_lines[1..-1].each do |raw_line|
+      lines << new_line(raw_line, lines.last.indent)
+    end
+  end
+end
+
+def new_line(raw_line, last_indent = 0)
+  c = raw_line.split("> ")
+  return Line.new("") if c.size == 0
+  Line.new(new_indent(c.length - 1, last_indent), c.last)
+end
+
+def new_indent(new_indent, last_indent)
+  new_indent == 0 ? last_indent : new_indent
+end
+```
