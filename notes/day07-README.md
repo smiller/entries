@@ -109,7 +109,7 @@ def new_line(raw_line, last_indent = 0)
   Line.new(new_indent(c.length - 1, last_indent), c.last)
 end
 
-def new_indent(new_indent, last_indent)
-  new_indent == 0 ? last_indent : new_indent
+def new_indent(current, previous)
+  current == 0 ? previous : current
 end
 ```
