@@ -113,3 +113,80 @@ def new_indent(current, previous)
   current == 0 ? previous : current
 end
 ```
+
+## On Sandi Metz’s Rules
+
+The result of the refactoring happens to follow the Sandi Metz [rule](https://robots.thoughtbot.com/sandi-metz-rules-for-developers) that there should be no more than five lines per method.  I really like the result.  There is (of course) a [gem](https://github.com/makaroni4/sandi_meter) that monitors compliance with the rules.  If we add it and run it from the command line, we see:
+
+```
+1. 100% of classes are under 100 lines.
+2. 83% of methods are under 5 lines.
+3. 100% of method calls accepted are less than 4 parameters.
+4. No controllers to analyze.
+
+Methods with 5+ lines
+  Class name  | Method name        | Size  | Path
+  Entry       | paragraphs         | 8     | ./lib/entry.rb
+  Entry       | reckon_paragraphs  | 9     | ./lib/entry.rb
+```
+
+Let’s have a look at the two exceptions:
+
+```ruby
+def paragraphs
+  case @lines.count
+  when 0
+    []
+  when 1
+    [@lines]
+  else
+    reckon_paragraphs
+  end
+end
+
+def reckon_paragraphs
+  [[@lines.first]].tap do |paras|
+    @lines[1..-1].each do |line|
+      if line.text == ""
+        paras << []
+      else
+        paras.last << line
+      end
+    end
+  end
+end
+```
+
+Hmm.  Are we bothered?  Looking at it, we see we can replace it with:
+
+```ruby
+def paragraphs
+  @lines.count == 0 ? [] : build_paragraphs
+end
+
+def build_paragraphs
+  [[@lines.first]].tap do |paras|
+    @lines[1..-1].each do |line|
+      paras = add_line(paras, line)
+    end
+  end
+end
+
+def add_line(paras, line)
+  paras.tap do |p|
+    line.text == "" ? p << [] : p.last << line
+  end
+end
+```
+
+This shows us between `entry#build_paragraphs` and `entry_builder#build_lines` we have a common pattern of
+
+```
+[{first element of collection}].tap do |result|
+  {iterate over rest of collection} do |element|
+    result << do_something_with(element)
+  end
+end
+```
+
+And one wonders if both methods could be simplified to use `#inject` instead.  Hmm.

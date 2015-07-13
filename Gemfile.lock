@@ -1,7 +1,12 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    addressable (2.3.8)
     diff-lcs (1.2.5)
+    json (1.8.3)
+    launchy (2.4.3)
+      addressable (~> 2.3)
+    mixlib-cli (1.5.0)
     rspec (3.3.0)
       rspec-core (~> 3.3.0)
       rspec-expectations (~> 3.3.0)
@@ -15,9 +20,14 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.3.0)
     rspec-support (3.3.0)
+    sandi_meter (1.2.0)
+      json
+      launchy
+      mixlib-cli
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   rspec
+  sandi_meter
