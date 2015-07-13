@@ -190,3 +190,53 @@ end
 ```
 
 And one wonders if both methods could be simplified to use `#inject` instead.  Hmm.
+
+## Rebuilding `build_` methods with `#inject`
+
+The short answer for `build_paragraph` is yes, we can:
+
+```ruby
+def paragraphs
+  return [] if @lines.count == 0
+  @lines.inject([[]]) do |result, line|
+    line.text == "" ? result << [] : result.last << line
+    result
+  end
+end
+```
+
+Though the guard clause for returning [] on a zero-count suggests an inconsistency, in that if whatever the consuming code is accepted [[]] instead, we wouldn’t need the guard clause.  Let’s just add that to our notional list:
+
+- Add another test in EntryBuilderSpec for the Macbeth quotation
+- Look for a more elegant way of handling the `lines_match` check
+- See whether `#paragraph`’s calling code could take [[]] for no paras?
+
+and look at `build_lines` for now.  We can use `#inject` there too:
+
+```ruby
+def build_lines
+  @raw_lines.inject([]) do |result, raw_line|
+    result << new_line(raw_line, result.last ? result.last.indent : 0)
+    result
+  end
+end
+```
+
+though it feels like it would be cleaner to extract the ternary operator to get the previous indent (provided there was a previous line) to a separate method:
+
+```ruby
+def build_lines
+  @raw_lines.inject([]) do |result, raw_line|
+    result << new_line(raw_line, previous_indent(result))
+    result
+  end
+end
+
+def previous_indent(result)
+  result.last ? result.last.indent : 0
+end
+```
+
+(We can also get rid of the default 0 value of last_indent in the `new_line(raw_line, last_indent = 0)` method because we’re setting it explicitly now and everything below `build` should be a private method in any case.  (The same would be the case for everything under `paragraphs` in entry, but after using `#inject` there are no other methods left.)
+
+In both cases the `#inject` code is slightly more complicated than it would be out of the box (I’m not terribly happy with the `([[]])` in `paragraphs`) because we’re relying on the previous element to build the current element, which is why we started with the `elements[0] … elements[1..-1]` structure, but in both cases, using the standard `#inject` feels a better approach.
