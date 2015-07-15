@@ -59,4 +59,13 @@ RSpec.describe HtmlFormatter, "#format" do
                              "<blockquote><blockquote>until the gods are tired of blood and create a race that can understand.</blockquote></blockquote>")
     end
   end
+  context "doesn't choke on multiple blank lines" do
+    it "copes" do
+      f = HtmlFormatter.new(Entry.new([Line.new("mind the gap..."),
+                                       Line.new(""),
+                                       Line.new(""),
+                                       Line.new("... safely stowed")]))
+      expect(f.format).to eq("<p>mind the gap...</p><p>... safely stowed</p>")
+    end
+  end
 end

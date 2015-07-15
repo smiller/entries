@@ -8,8 +8,20 @@ class Entry
   def paragraphs
     return [] if @lines.count == 0
     @lines.inject([[]]) do |result, line|
-      line.text == "" ? result << [] : result.last << line
-      result
+      build_next_result(result, line)
     end
+  end
+
+  private
+
+  def build_next_result(result, line)
+    unless second_blank_line(result, line)
+      line.text == "" ? result << [] : result.last << line
+    end
+    result
+  end
+
+  def second_blank_line(result, line)
+    line.text == "" && result.last == []
   end
 end
