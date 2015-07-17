@@ -1,4 +1,8 @@
+require 'trimmer'
+
 class EntryBuilder
+  include Trimmer
+
   def initialize(raw_lines)
     @raw_lines = raw_lines
   end
@@ -10,9 +14,8 @@ class EntryBuilder
   private
 
   def build_lines
-    @raw_lines.inject([]) do |result, raw_line|
-      result << new_line(raw_line, previous_indent(result))
-      result
+    trimmed(@raw_lines).inject([]) do |result, line|
+      result << new_line(line, previous_indent(result))
     end
   end
 

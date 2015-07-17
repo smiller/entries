@@ -5,4 +5,8 @@ class Line
     @indent = indent
     @text = text
   end
+
+  def empty?
+    text == ""
+  end
 end

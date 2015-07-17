@@ -70,6 +70,35 @@ RSpec.describe EntryBuilder, "#build" do
       lines_match(expected, b.build)
     end
   end
+  context "blank lines" do
+    context "strips initial / final" do
+      it "does" do
+        raw = ["",
+               "> LENNOX",
+               "> > Sent he to Macduff?",
+               ""]
+        expected = Entry.new([Line.new(1, "LENNOX"),
+                              Line.new(2, "Sent he to Macduff?")])
+        b = EntryBuilder.new(raw)
+        lines_match(expected, b.build)
+      end
+    end
+    context "strips multiple medial" do
+      it "does" do
+        raw = ["> LENNOX",
+               "> > Sent he to Macduff?",
+               "",
+               "",
+               "> LORD"]
+        expected = Entry.new([Line.new(1, "LENNOX"),
+                              Line.new(2, "Sent he to Macduff?"),
+                              Line.new(""),
+                              Line.new(1, "LORD")])
+        b = EntryBuilder.new(raw)
+        lines_match(expected, b.build)
+      end
+    end
+  end
 end
 
 def lines_match(expected, actual)
