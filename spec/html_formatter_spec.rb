@@ -68,4 +68,12 @@ RSpec.describe HtmlFormatter, "#format" do
       expect(f.format).to eq("<p>mind the gap...</p><p>... safely stowed</p>")
     end
   end
+
+  context "Macbeth changing indent" do
+    it "copes" do
+      f = HtmlFormatter.new(Entry.new([Line.new(1, "LENNOX"),
+                                       Line.new(2, "Sent he to Macduff?")]))
+      expect(f.format).to eq("<blockquote>LENNOX</blockquote><blockquote><blockquote>Sent he to Macduff?</blockquote></blockquote>")
+    end
+  end
 end

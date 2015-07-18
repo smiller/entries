@@ -71,4 +71,13 @@ RSpec.describe Entry, "#paragraphs" do
       end
     end
   end
+
+  context "changing indent changes paragraph" do
+    it "returns two paras" do
+      first = [Line.new(1, "LENNOX")]
+      second = [Line.new(2, "Sent he to Macduff?")]
+      entry = Entry.new([first, second].flatten)
+      expect(entry.paragraphs).to eq([first, second])
+    end
+  end
 end
