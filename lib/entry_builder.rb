@@ -1,4 +1,4 @@
-require 'trimmer'
+require_relative "trimmer"
 
 class EntryBuilder
   include Trimmer
